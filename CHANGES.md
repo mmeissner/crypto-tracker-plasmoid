@@ -1,3 +1,25 @@
+* v3.0.1 (2026-09-14)
+  * Fixed update checker: upstream fetched a `metadata.desktop` that no longer exists in the
+    repo (404) and parsed desktop-format text with an unguarded regex. It now fetches the fork's
+    `metadata.json`, parses it safely, and only notifies when the remote version is actually newer.
+  * Fixed `NotificationManager` expireTimeout check (`typeof x !== undefined` compared a string
+    to the `undefined` value — always true).
+  * Fixed trending marker direction (compared `currentRate` instead of the fetched `rate`).
+  * `generate_data.py` fixes: deadlocked forever when an exchange API was unreachable
+    (BitBay's api.zonda.exchange no longer resolves); Binance pairs were never detected
+    (validator expected a list, `/ticker/price` returns an object); Python 3.14 compat (forced
+    `fork` start method); disabled dead BitBay; fixed cache dir path (".cryto" typo) and
+    "Czech Koruna" name; fixed disabled-exchange removal (KeyError).
+  * Config dialog no longer crashes on exchanges with zero pairs or unknown exchange ids, and
+    corrupt stored config no longer crashes the widget or the settings page (guarded JSON
+    parsing everywhere).
+  * XHR failures (non-200) no longer wedge the ticker in "downloading" state.
+  * Fixed GLM icon (upstream accidentally committed a saved HTML 404 page as `glm.svg`).
+  * Default config now ships Kraken BTC/USD + Binance ETH/USD (the old defaults pointed at
+    the dead BitBay API and never displayed a price).
+  * Added `tools/qa.py` — static QA: metadata/meta.js sync, generated-data URL whitelist and
+    pair sanity, icon validity, default-config validation.
+
 * v3.0.0 (2026-01-14)
   * Added support for Plasma 6
   * Changed Binance API url to use `/v3/ticker/price` endpoint.

@@ -6,6 +6,15 @@ Plasma 6/KDE multi crypto currency price tracker widget, with support for multip
 
 ![Widget vertical](docs/img/widget01.png) ![Widget horizontal](docs/img/widget02.png) ![Widget bg flash](docs/img/widget03.gif)
 
+## This fork ##
+
+This is [mmeissner's](https://github.com/mmeissner) patched fork of the upstream
+[MarcinOrlowski/crypto-tracker-plasmoid](https://github.com/MarcinOrlowski/crypto-tracker-plasmoid).
+Security-audited and fixed as of v3.0.1 — see [CHANGES.md](CHANGES.md) for the full list
+(repaired update checker, dead BitBay/zonda API disabled, Binance pair detection, Python 3.14
+compatibility of the data generator, config-dialog crash guards, repaired GLM icon).
+Run `python3 tools/qa.py` for static QA of any tree state.
+
 ---
 
 ## Table of Contents ##
