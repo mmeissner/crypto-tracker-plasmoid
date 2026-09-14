@@ -1,4 +1,15 @@
 * v3.0.1 (2026-09-14)
+  * Added fiat FX pairs: entries of type "Fiat FX" display `USD/EUR 0.87€` — the pair code
+    followed by the converted rate with the currency sign of the currency converted into.
+    Rates come from the Free Currency Rates API (fawazahmed0, via jsdelivr with its documented
+    fallback CDN) — the same source as the krunner-currency plugin. Direct pair lookup means no
+    cross-rate arithmetic and no accumulated precision loss; decimals are adaptive (like
+    krunner) or fixed per entry (0–12); symbols can be hidden. Note: the API publishes a single
+    mid rate per pair (no bid/ask), so there is no buy/sell side to choose.
+  * Added monochrome icon mode (Layout page): coin icons are colorized into a single colour
+    (following the panel text colour by default, or a custom colour) while preserving the SVG
+    transparency.
+  * Removed the dead BitBay/zonda exchange entirely (its API no longer resolves).
   * Fixed update checker: upstream fetched a `metadata.desktop` that no longer exists in the
     repo (404) and parsed desktop-format text with an unguarded regex. It now fetches the fork's
     `metadata.json`, parses it safely, and only notifies when the remote version is actually newer.
