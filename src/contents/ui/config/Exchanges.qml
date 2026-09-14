@@ -30,9 +30,38 @@ Item {
 		onTextChanged: {
 			exchangesModel.clear()
 			try {
-				JSON.parse(serializedExchanges.text).forEach(
-					ex => exchangesModel.append(ex)
-				)
+				JSON.parse(serializedExchanges.text).forEach(function (ex) {
+					// Normalize every row to the FULL role set before append.
+					// ListModel infers roles from appended rows; rows without
+					// a role added by an earlier row would leave delegates
+					// (already bound) seeing undefined — the listview then
+					// rendered FX entries as crypto ones.
+					exchangesModel.append({
+						'enabled': ex.enabled !== undefined ? ex.enabled : true,
+						'type': ex.type || 'crypto',
+						'exchange': ex.exchange || '',
+						'crypto': ex.crypto || '',
+						'fxBase': ex.fxBase || '',
+						'fxQuote': ex.fxQuote || '',
+						'fxDecimals': ex.fxDecimals !== undefined ? ex.fxDecimals : 0,
+						'fxHideSymbol': ex.fxHideSymbol !== undefined ? ex.fxHideSymbol : false,
+						'hideCryptoLogo': ex.hideCryptoLogo !== undefined ? ex.hideCryptoLogo : false,
+						'pair': ex.pair || '',
+						'refreshRate': ex.refreshRate !== undefined ? ex.refreshRate : 5,
+						'hidePriceDecimals': ex.hidePriceDecimals !== undefined ? ex.hidePriceDecimals : false,
+						'useCustomLocale': ex.useCustomLocale !== undefined ? ex.useCustomLocale : false,
+						'customLocaleName': ex.customLocaleName || '',
+						'showPriceChangeMarker': ex.showPriceChangeMarker !== undefined ? ex.showPriceChangeMarker : true,
+						'showTrendingMarker': ex.showTrendingMarker !== undefined ? ex.showTrendingMarker : true,
+						'trendingTimeSpan': ex.trendingTimeSpan !== undefined ? ex.trendingTimeSpan : 60,
+						'flashOnPriceRaise': ex.flashOnPriceRaise !== undefined ? ex.flashOnPriceRaise : true,
+						'flashOnPriceRaiseColor': ex.flashOnPriceRaiseColor || '#78c625',
+						'flashOnPriceDrop': ex.flashOnPriceDrop !== undefined ? ex.flashOnPriceDrop : true,
+						'flashOnPriceDropColor': ex.flashOnPriceDropColor || '#ff006e',
+						'markerColorPriceRaise': ex.markerColorPriceRaise || '#78c625',
+						'markerColorPriceDrop': ex.markerColorPriceDrop || '#ff006e',
+					})
+				})
 			} catch (error) {
 				// Corrupt stored config must not kill the settings dialog.
 				console.error('Exchanges: failed to parse config JSON:', error)

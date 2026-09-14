@@ -180,8 +180,13 @@ ColumnLayout {
             Kirigami.FormData.label: i18n('Entry type')
             textRole: 'text'
             model: [{'value': 'crypto', 'text': i18n('Crypto')}, {'value': 'fx', 'text': i18n('Fiat FX')}]
-            onActivated: {
-                fxType = (currentValue === 'fx')
+            onActivated: applyType(currentIndex)
+
+            // NB: with textRole set, currentValue is the display text, not our
+            // 'value' field — always read model[currentIndex].value.
+            function applyType(idx) {
+                if (idx < 0 || idx >= model.length) return
+                fxType = (model[idx].value === 'fx')
                 if (fxType) {
                     // switching to FX mid-edit: point the currency combos at
                     // the entry's current fx values instead of list defaults
@@ -333,7 +338,12 @@ ColumnLayout {
                 id: fxBaseComboBox
                 textRole: 'text'
                 model: Fiat.currencyModel()
-                onActivated: fxBase = currentValue
+                onActivated: applyBase(currentIndex)
+
+                function applyBase(idx) {
+                    if (idx < 0 || idx >= model.length) return
+                    fxBase = model[idx].value
+                }
 
                 function syncFrom(code) {
                     var idx = 0
@@ -350,7 +360,12 @@ ColumnLayout {
                 textRole: 'text'
                 Kirigami.FormData.label: i18n('Converted into')
                 model: Fiat.currencyModel()
-                onActivated: fxQuote = currentValue
+                onActivated: applyQuote(currentIndex)
+
+                function applyQuote(idx) {
+                    if (idx < 0 || idx >= model.length) return
+                    fxQuote = model[idx].value
+                }
 
                 function syncFrom(code) {
                     var idx = 0

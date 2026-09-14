@@ -28,6 +28,12 @@
   * Fixed GLM icon (upstream accidentally committed a saved HTML 404 page as `glm.svg`).
   * Default config now ships Kraken BTC/USD + Binance ETH/USD (the old defaults pointed at
     the dead BitBay API and never displayed a price).
+  * Fixed FX combo activation storing the display text ("THB — Thai Baht") instead of
+    the currency code — such entries could never fetch (always "---"). Combos now read
+    the model's value field; the entry-type switch works from manual activation too.
+  * Fixed the exchanges listview rendering FX entries as crypto ones: ListModel roles
+    are inferred from appended rows, so rows are normalized to the full key set before
+    appending (the edit dialog read the raw JSON and was unaffected).
   * Added `tools/qa.py` — static QA: metadata/meta.js sync, generated-data URL whitelist and
     pair sanity, icon validity, default-config validation.
 
