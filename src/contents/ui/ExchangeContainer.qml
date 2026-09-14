@@ -17,7 +17,18 @@ import "../js/crypto.js" as Crypto
 GridLayout {
 	readonly property bool vericalOrientation: Plasmoid.formFactor == PlasmaCore.Types.Vertical
 	readonly property string defaultLocale: ''
-	property var exchanges: JSON.parse(Plasmoid.configuration.exchanges).filter(ex => ex['enabled'])
+	property var exchanges: parseExchanges(Plasmoid.configuration.exchanges)
+
+	// Untrusted, user-editable JSON: never let a corrupt value crash the shell.
+	function parseExchanges(raw) {
+		try {
+			var parsed = JSON.parse(raw)
+			return Array.isArray(parsed) ? parsed.filter(ex => ex && ex['enabled']) : []
+		} catch (error) {
+			console.error('ExchangeContainer: failed to parse stored exchanges config:', error)
+			return []
+		}
+	}
 
 	// Lame trick to force re-evaluation. It's needed because if we reorder exchanges, then
 	// exchange count is unchanged, so (unless there's better way?) Repeater will not be

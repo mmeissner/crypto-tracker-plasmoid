@@ -52,8 +52,6 @@ ColumnLayout {
     }
 
     function fromJson(json) {
-        console.debug(json)
-
         exchangeEnabled.checked = json.enabled
 		exchange = json.exchange
 		crypto = json.crypto
@@ -114,11 +112,18 @@ ColumnLayout {
         }
         if (typeof crypto === 'undefined' || crypto === '' || !Crypto.isCryptoSupported(exchange, crypto)) {
             var cryptos = Crypto.getAllExchangeCryptos(exchange);
-            crypto = cryptos[0].value
+            crypto = (cryptos !== null && cryptos.length > 0) ? cryptos[0].value : ''
+        }
+        if (crypto === '') {
+            // Exchange unknown to the generated data (dead or removed): leave the
+            // stored values untouched so an existing config stays editable
+            // instead of crashing the dialog on empty models.
+            exchangeComboBox.updateModel(exchange)
+            return
         }
         if (typeof pair === 'undefined' || pair === '' || !Crypto.isPairSupported(exchange, crypto, pair)) {
             var pairs = Crypto.getPairsForCrypto(exchange, crypto)
-            pair = pairs[0].value
+            pair = (pairs !== null && pairs.length > 0) ? pairs[0].value : ''
         }
 
         exchangeComboBox.updateModel(exchange)
@@ -143,7 +148,9 @@ ColumnLayout {
             Kirigami.FormData.label: i18n('Exchange')
             textRole: "text"
             // Component.onCompleted: populateExchageModel()
-            onCurrentIndexChanged: exchange = model[currentIndex]['value']
+            onCurrentIndexChanged: {
+                if (currentIndex >= 0 && currentIndex < model.length) exchange = model[currentIndex]['value']
+            }
 
             function updateModel(exchange) {
                 var tmp = []
@@ -185,7 +192,9 @@ ColumnLayout {
             PlasmaComponents.ComboBox {
                 id: cryptoComboBox
                 textRole: "text"
-                onCurrentIndexChanged: crypto = model[currentIndex]['value']
+                onCurrentIndexChanged: {
+                    if (currentIndex >= 0 && currentIndex < model.length) crypto = model[currentIndex]['value']
+                }
 
                 function updateModel(exchange, crypto) {
                     var tmp = []
@@ -197,11 +206,13 @@ ColumnLayout {
                         }
                     }
                     model = tmp
-                    currentIndex = currentIdx
+                    currentIndex = (tmp.length > 0) ? currentIdx : -1
 
                     // as the model is swapped, different crypto can be at already set index
                     // so we need to ensure we do not use old value any more.
-                    crypto = model[currentIndex]['value']
+                    if (tmp.length > 0) {
+                        crypto = model[currentIndex]['value']
+                    }
                 }
             }
 
@@ -220,7 +231,9 @@ ColumnLayout {
             PlasmaComponents.ComboBox {
                 id: pairComboBox
                 textRole: "text"
-                onCurrentIndexChanged: pair = model[currentIndex]['value']
+                onCurrentIndexChanged: {
+                    if (currentIndex >= 0 && currentIndex < model.length) pair = model[currentIndex]['value']
+                }
 
                 function updateModel(exchange, crypto, pair) {
                     var tmp = []
@@ -232,11 +245,13 @@ ColumnLayout {
                         }
                     }
                     model = tmp
-                    currentIndex = currentIdx
+                    currentIndex = (tmp.length > 0) ? currentIdx : -1
 
                     // as the model is swapped, different pair can be at already set index
                     // so we need to ensure we do not use old value any more.
-                    pair = model[currentIndex]['value']
+                    if (tmp.length > 0) {
+                        pair = model[currentIndex]['value']
+                    }
                 }
             }
 

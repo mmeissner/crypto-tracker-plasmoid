@@ -128,7 +128,7 @@ Item {
             if ((now.getTime() - lastTrendingUpdateStamp) >= (trendingTimeSpan * 60 * 1000)) {
                 if (rate > lastTrendingRate) {
                     trendingDirection = 1
-                } else if (currentRate < lastTrendingRate) {
+                } else if (rate < lastTrendingRate) {
                     trendingDirection = -1
                 } else {
                     trendingDirection = 0
@@ -181,8 +181,6 @@ Item {
 
     function getCurrentRateText() {
         if (!currentRateValid) return '---'
-
-        var color = '#0000ff'
 
         var rate = currentRate
         if(hidePriceDecimals) rate = Math.round(rate)
@@ -393,8 +391,10 @@ Item {
 
         // console.debug(`Download url: '${url}'`)
 
+        // callback(null) marks transport-level failure (non-200) so the caller
+        // can release dataDownloadInProgress. Never call callback() with a rate.
         request(url, function(data) {
-            if(data.length !== 0) {
+            if (data !== null && data.length !== 0) {
                 try {
                     var json = JSON.parse(data)
                     callback(exchange.getRateFromExchangeData(json, crypto, pair))
@@ -413,8 +413,14 @@ Item {
     function request(url, callback) {
         var xhr = new XMLHttpRequest()
         xhr.onreadystatechange = function() {
-            if(xhr.readyState === 4) {
-                callback(xhr.responseText)
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    callback(xhr.responseText)
+                } else {
+                    // Do not pass garbage (HTML error pages etc.) to the parser.
+                    console.debug('request(): HTTP ' + xhr.status + ' for ' + url)
+                    callback(null)
+                }
             }
         }
         xhr.open('GET', url, true)

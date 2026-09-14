@@ -28,9 +28,14 @@ Item {
 		visible: false
 		onTextChanged: {
 			exchangesModel.clear()
-			JSON.parse(serializedExchanges.text).forEach(
-				ex => exchangesModel.append(ex)
-			)
+			try {
+				JSON.parse(serializedExchanges.text).forEach(
+					ex => exchangesModel.append(ex)
+				)
+			} catch (error) {
+				// Corrupt stored config must not kill the settings dialog.
+				console.error('Exchanges: failed to parse config JSON:', error)
+			}
 		}
 	}
 
