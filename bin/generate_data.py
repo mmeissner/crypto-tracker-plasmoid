@@ -290,7 +290,14 @@ class Exchange:
 
     def do_api_call(self, queue, tr: TestResult) -> None:
         url = self.api_url.format(crypto = tr.crypto, pair = tr.pair)
-        response = req.get(url)
+        try:
+            response = req.get(url)
+        except req.RequestException:
+            # Network errors (DNS, timeouts, ...) must still yield a result,
+            # otherwise the consumer loop deadlocks waiting for this probe.
+            tr.rc = False
+            queue.put(tr)
+            return
         tr.rc = self.is_ticker_valid(response)
         self.d('#{sc} isValid:{rc} {url}'.format(url = url, sc = response.status_code, rc = tr.rc))
         queue.put(tr)
@@ -309,7 +316,10 @@ class Binance(Exchange):
     def is_ticker_valid(self, response: req.Response) -> bool:
         if response.status_code != req.codes.ok:
             return False
-        resp = json.loads(response.text)
+        try:
+            resp = json.loads(response.text)
+        except ValueError:
+            return False
         if not isinstance(resp, List):
             return False
         for field in ['id', 'price', 'qty', 'quoteQty', 'time', ]:
@@ -321,7 +331,13 @@ class Binance(Exchange):
 class Bitstamp(Exchange):
     def do_api_call(self, queue, tr: TestResult) -> None:
         url = self.api_url.format(crypto = tr.crypto.lower(), pair = tr.pair.lower())
-        response = req.get(url)
+        try:
+            response = req.get(url)
+        except req.RequestException:
+            # See Exchange.do_api_call(): keep the result flowing on errors.
+            tr.rc = False
+            queue.put(tr)
+            return
         tr.rc = self.is_ticker_valid(response)
         self.d('#{sc} isValid:{rc} {url}'.format(url = url, sc = response.status_code, rc = tr.rc))
         queue.put(tr)
@@ -331,7 +347,10 @@ class Bitbay(Exchange):
         if response.status_code != req.codes.ok:
             return False
 
-        resp = json.loads(response.text)
+        try:
+            resp = json.loads(response.text)
+        except ValueError:
+            return False
         for field in ['min', 'max', 'last', 'bid', 'ask', ]:
             if field not in resp:
                 return False
@@ -342,7 +361,10 @@ class Coinmate(Exchange):
         if response.status_code != req.codes.ok:
             return False
 
-        resp = json.loads(response.text)
+        try:
+            resp = json.loads(response.text)
+        except ValueError:
+            return False
         if resp.get('error', False) or 'data' not in resp:
             return False
         for field in ['ask', 'bid', 'change', 'last', ]:
@@ -356,13 +378,19 @@ class Kraken(Exchange):
         if response.status_code != req.codes.ok:
             return False
 
-        resp = json.loads(response.text)
+        try:
+            resp = json.loads(response.text)
+        except ValueError:
+            return False
         if len(resp.get('error', [])) > 0:
             return False
         if 'result' not in resp:
             return False
 
-        key = list(resp['result'].keys())[0]
+        keys = list(resp['result'].keys())
+        if len(keys) == 0:
+            return False
+        key = keys[0]
         if key not in resp['result']:
             return False
         for field in ['a', 'b', 'c', 'l', ]:
