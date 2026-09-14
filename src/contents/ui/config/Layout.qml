@@ -27,6 +27,9 @@ Kirigami.FormLayout {
 	property alias cfg_containerLayoutRows: layoutRows.value
 	property alias cfg_containerLayoutColumns: layoutColumns.value
 	property alias cfg_containerLayoutTransparentBackgroundEnabled: transparentBackground.checked
+	property alias cfg_monochromeIcons: monochromeIcons.checked
+	property alias cfg_monochromeIconUseTextColor: monochromeIconUseTextColor.checked
+	property alias cfg_monochromeIconColor: monochromeIconColor.color
 
 	// ------------------------------------------------------------------------------------------------------------------------
 
@@ -65,6 +68,29 @@ Kirigami.FormLayout {
 		// If ConfigurableBackground is set, the we most likely run on Plasma 5.19+ and if so,
 		// we prefer using widget's background control features instead.
 		visible: typeof PlasmaCore.Types.ConfigurableBackground === "undefined"
+	}
+
+	Item {
+		Layout.fillWidth: true
+		height: Kirigami.Units.smallSpacing
+	}
+
+	CheckBox {
+		id: monochromeIcons
+		text: i18n("Monochrome icons")
+	}
+
+	CheckBox {
+		id: monochromeIconUseTextColor
+		text: i18n("Follow panel text colour")
+		enabled: monochromeIcons.checked
+	}
+
+	KQControls.ColorButton {
+		id: monochromeIconColor
+		enabled: monochromeIcons.checked && !monochromeIconUseTextColor.checked
+		Kirigami.FormData.label: i18n("Custom icon colour")
+		dialogTitle: i18n("Monochrome icon colour")
 	}
 
 	Item {

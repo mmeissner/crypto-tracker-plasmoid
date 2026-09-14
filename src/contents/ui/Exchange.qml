@@ -9,9 +9,11 @@
 
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Effects
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
+import org.kde.kirigami as Kirigami
 import "../js/crypto.js" as Crypto
 
 Item {
@@ -19,6 +21,11 @@ Item {
 
     implicitWidth: contentLayout.implicitWidth
     implicitHeight: contentLayout.implicitHeight
+
+    // Icon appearance (configured on the Layout page)
+    readonly property bool monochromeIcons: Plasmoid.configuration.monochromeIcons
+    readonly property bool monochromeIconUseTextColor: Plasmoid.configuration.monochromeIconUseTextColor
+    readonly property color monochromeIconColor: Plasmoid.configuration.monochromeIconColor
 
     property var json: undefined
 
@@ -235,8 +242,8 @@ Item {
         id: contentLayout
         anchors.centerIn: parent
 
-        Image {
-            id: cryptoIcon
+        Item {
+            id: cryptoIconSlot
             visible: !hideCryptoLogo
 
             Layout.preferredWidth: 20
@@ -245,12 +252,33 @@ Item {
             Layout.minimumHeight: 20
             Layout.maximumWidth: 20
             Layout.maximumHeight: 20
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            mipmap: true
-            sourceSize.width: Math.ceil(width * Screen.devicePixelRatio)
-            sourceSize.height: Math.ceil(height * Screen.devicePixelRatio)
-            source: crypto ? Qt.resolvedUrl('../images/' + Crypto.getCryptoIcon(crypto)) : ''
+
+            Image {
+                id: cryptoIcon
+                anchors.fill: parent
+                visible: !monochromeIcons
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+                sourceSize.width: Math.ceil(width * Screen.devicePixelRatio)
+                sourceSize.height: Math.ceil(height * Screen.devicePixelRatio)
+                source: crypto ? Qt.resolvedUrl('../images/' + Crypto.getCryptoIcon(crypto)) : ''
+            }
+
+            // Monochrome mode: colorize the icon into a single colour while
+            // keeping the SVG's transparency. Bright areas take the target
+            // colour at full strength, darker shades are dimmed, so glyphs
+            // keep their shape. Colour follows the panel text colour unless
+            // a custom one is configured.
+            MultiEffect {
+                anchors.fill: parent
+                source: cryptoIcon
+                visible: monochromeIcons
+                autoPaddingEnabled: false
+                colorization: 1.0
+                colorizationColor: monochromeIconUseTextColor ? Kirigami.Theme.textColor
+                                                              : monochromeIconColor
+            }
         }
 
         PlasmaComponents.Label {
