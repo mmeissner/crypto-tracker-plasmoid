@@ -65,7 +65,9 @@ signal.signal(signal.SIGINT, signal_handler)
 ######################################################################
 
 CACHE_THRESHOLD = '30d'
-CACHE_DIR_NAME = '~/.cryto-tracker-plasmoid-gen-cache'
+# (Was '~/.cryto-tracker-plasmoid-gen-cache' — "cryto" typo; old cache can be
+# moved to the new location to keep the 30d validation cache.)
+CACHE_DIR_NAME = '~/.cache/crypto-tracker-plasmoid/gen-cache'
 
 
 ######################################################################
@@ -163,7 +165,7 @@ currencies = {
     'BTT':   {'name': 'BitTorrent', },
     'BUSD':  {'name': 'Binance USD', 'symbol': 'B$', },
     'COMP':  {'name': 'Compound', },
-    'CZK':   {'name': 'Czech Krown', 'symbol': 'Kč', },
+    'CZK':   {'name': 'Czech Koruna', 'symbol': 'Kč', },
     'DASH':  {'name': 'Dash', },
     'DOGE':  {'name': 'Dogecoin', },
     'DOT':   {'name': 'Polkadot', },
@@ -465,7 +467,7 @@ class Exchanges:
         if self.config.exchange_filter is None:
             for _, ex in self._container.items():
                 if ex.disabled:
-                    to_be_removed.append(ex)
+                    to_be_removed.append(ex.code)
         else:
             ex_filter = self.config.exchange_filter
             self.verbose('Filtering exchanges: "{}"'.format(ex_filter))
@@ -597,7 +599,10 @@ exchanges.add(
 
 exchanges.add(
     Bitbay(
-        # disabled = True,
+        # api.zonda.exchange (BitBay's exchange platform) no longer resolves —
+        # DNS is dead as of 2026-09. Disabled so the widget doesn't ship an
+        # exchange with zero pairs; flip back if the API ever returns.
+        disabled = True,
         code = 'bitbay-net',
         name = 'BitBay',
         url = 'https://bitbay.net/',
