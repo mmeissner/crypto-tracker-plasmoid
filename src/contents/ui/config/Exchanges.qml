@@ -14,6 +14,7 @@ import QtQuick.Layouts
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.kirigami as Kirigami
 import "../../js/crypto.js" as Crypto
+import "../../js/fiat.js" as Fiat
 import ".."
 
 Item {
@@ -115,18 +116,25 @@ Item {
 								Layout.preferredWidth: parent.width * 0.4
 								text: {
 									var res = model.enabled ? '' : '(L) '
+									if (model.type === 'fx') {
+										return res + i18n('Fiat FX (fawazahmed0)')
+									}
 									return res + Crypto.getExchangeName(model.exchange)
 								}
 								color: ListView.isCurrentItem ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
 							}
 							PlasmaComponents.Label {
 								Layout.preferredWidth: parent.width * 0.3
-								text: Crypto.getCryptoName(model.crypto)
+								text: model.type === 'fx'
+										? Fiat.getName(model.fxBase)
+										: Crypto.getCryptoName(model.crypto)
 								color: ListView.isCurrentItem ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
 							}
 							PlasmaComponents.Label {
 								Layout.fillWidth: true
-								text: Crypto.getCurrencyName(model.pair)
+								text: model.type === 'fx'
+										? model.fxQuote + ' (' + Fiat.getName(model.fxQuote) + ')'
+										: Crypto.getCurrencyName(model.pair)
 								color: ListView.isCurrentItem ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
 							}
 						}

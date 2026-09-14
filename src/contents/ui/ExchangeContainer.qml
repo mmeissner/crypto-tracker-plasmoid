@@ -54,10 +54,21 @@ GridLayout {
 
 	Repeater {
 		model: exchangeCount
-		Exchange {
-			json: exchanges[index]
+		Loader {
+			property var entryJson: exchanges[index]
+			sourceComponent: (entryJson && entryJson['type'] === 'fx') ? fxComponent : exchangeComponent
 			Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 		}
+	}
+
+	Component {
+		id: exchangeComponent
+		Exchange { json: entryJson }
+	}
+
+	Component {
+		id: fxComponent
+		FxPair { json: entryJson }
 	}
 
 } // ColumnLayout

@@ -14,6 +14,7 @@ import org.kde.kirigami as Kirigami
 import org.kde.kquickcontrols as KQControls
 import org.kde.plasma.components as PlasmaComponents
 import "../../js/crypto.js" as Crypto
+import "../../js/fiat.js" as Fiat
 import ".."
 
 ColumnLayout {
@@ -23,14 +24,24 @@ ColumnLayout {
     property string crypto: undefined
     property string pair: undefined
 
+    // Entry type: 'crypto' (exchange ticker) or 'fx' (fiat FX pair)
+    property bool fxType: false
+    property string fxBase: 'USD'
+    property string fxQuote: 'EUR'
+
     // ------------------------------------------------------------------------------------------------------------------------
 
     function init() {
         fromJson({
             'enabled': true,
 
+            'type': 'crypto',
             'exchange': Crypto.getExchageIds()[0],
             'crypto': Crypto.BTC,   // FIXME we should fetch first crypto supported by exchange!
+            'fxBase': 'USD',
+            'fxQuote': 'EUR',
+            'fxDecimals': 0,
+            'fxHideSymbol': false,
             'hideCryptoLogo': false,
             'pair': Crypto.USD,   // FIXME we should fetch first pair supported by exchange!
             'refreshRate': 15,
@@ -53,6 +64,19 @@ ColumnLayout {
 
     function fromJson(json) {
         exchangeEnabled.checked = json.enabled
+
+        // Type must be set first so updateModels() (fired by the property
+        // changes below) can skip crypto model work for FX entries.
+        fxType = (json.type === 'fx')
+        typeComboBox.syncFrom(fxType ? 'fx' : 'crypto')
+
+        fxBase = (json.fxBase !== undefined) ? json.fxBase : 'USD'
+        fxQuote = (json.fxQuote !== undefined) ? json.fxQuote : 'EUR'
+        fxDecimals.value = (json.fxDecimals !== undefined) ? json.fxDecimals : 0
+        fxHideSymbol.checked = (json.fxHideSymbol !== undefined) ? json.fxHideSymbol : false
+        fxBaseComboBox.syncFrom(fxBase)
+        fxQuoteComboBox.syncFrom(fxQuote)
+
 		exchange = json.exchange
 		crypto = json.crypto
 		hideCryptoLogo.checked = json.hideCryptoLogo
@@ -78,8 +102,13 @@ ColumnLayout {
         return {
             'enabled': exchangeEnabled.checked,
 
+            'type': fxType ? 'fx' : 'crypto',
             'exchange': exchange,
             'crypto': crypto,
+            'fxBase': fxBase,
+            'fxQuote': fxQuote,
+            'fxDecimals': fxDecimals.value,
+            'fxHideSymbol': fxHideSymbol.checked,
             'hideCryptoLogo': hideCryptoLogo.checked,
             'pair': pair,
             'refreshRate': refreshRate.value,
@@ -107,6 +136,10 @@ ColumnLayout {
     onPairChanged: updateModels()
 
     function updateModels() {
+        if (fxType) {
+            // FX entries have no crypto exchange model behind them.
+            return
+        }
         if (typeof exchange === 'undefined' || exchange === '') {
             return
         }
@@ -142,8 +175,23 @@ ColumnLayout {
         }
 
         PlasmaComponents.ComboBox {
+            id: typeComboBox
+            enabled: exchangeEnabled.checked
+            Kirigami.FormData.label: i18n('Entry type')
+            textRole: 'text'
+            model: [{'value': 'crypto', 'text': i18n('Crypto')}, {'value': 'fx', 'text': i18n('Fiat FX')}]
+            onActivated: fxType = (currentValue === 'fx')
+
+            function syncFrom(t) {
+                currentIndex = (t === 'fx') ? 1 : 0
+                fxType = (t === 'fx')
+            }
+        }
+
+        PlasmaComponents.ComboBox {
             id: exchangeComboBox
 
+            visible: !fxType
             enabled: exchangeEnabled.checked
             Kirigami.FormData.label: i18n('Exchange')
             textRole: "text"
@@ -169,6 +217,7 @@ ColumnLayout {
         }
 
         ClickableLabel {
+            visible: !fxType
             text: '<u>' + Crypto.getExchangeUrl(exchange) + '</u>'
             url: Crypto.getExchangeUrl(exchange)
         }
@@ -186,6 +235,7 @@ ColumnLayout {
         // ------------------------------------------------------------------------------------------------------------------------
 
         RowLayout {
+            visible: !fxType
             Kirigami.FormData.label: i18n('Crypto')
             enabled: exchangeEnabled.checked
 
@@ -225,6 +275,7 @@ ColumnLayout {
         // ------------------------------------------------------------------------------------------------------------------------
 
         RowLayout {
+            visible: !fxType
             Kirigami.FormData.label: i18n('Pair')
             enabled: exchangeEnabled.checked
 
@@ -263,6 +314,64 @@ ColumnLayout {
             }
         }
 
+        // ------------------------------------------------------------------------------------------------------------------------
+
+        RowLayout {
+            visible: fxType
+            enabled: exchangeEnabled.checked
+            Kirigami.FormData.label: i18n('Base currency')
+
+            PlasmaComponents.ComboBox {
+                id: fxBaseComboBox
+                textRole: 'text'
+                model: Fiat.currencyModel()
+                onActivated: fxBase = currentValue
+
+                function syncFrom(code) {
+                    var idx = 0
+                    for (var i = 0; i < model.length; i++) {
+                        if (model[i].value === code) { idx = i; break }
+                    }
+                    currentIndex = idx
+                    fxBase = model[currentIndex].value
+                }
+            }
+
+            PlasmaComponents.ComboBox {
+                id: fxQuoteComboBox
+                textRole: 'text'
+                Kirigami.FormData.label: i18n('Converted into')
+                model: Fiat.currencyModel()
+                onActivated: fxQuote = currentValue
+
+                function syncFrom(code) {
+                    var idx = 0
+                    for (var i = 0; i < model.length; i++) {
+                        if (model[i].value === code) { idx = i; break }
+                    }
+                    currentIndex = idx
+                    fxQuote = model[currentIndex].value
+                }
+            }
+        }
+
+        PlasmaComponents.SpinBox {
+            id: fxDecimals
+            visible: fxType
+            enabled: exchangeEnabled.checked
+            editable: true
+            from: 0
+            to: 12
+            Kirigami.FormData.label: i18n("Decimals (0 = auto)")
+        }
+
+        PlasmaComponents.CheckBox {
+            id: fxHideSymbol
+            visible: fxType
+            enabled: exchangeEnabled.checked
+            text: i18n("Hide currency symbol")
+        }
+
         CheckBox {
             id: showPriceChangeMarker
             text: i18n("Show price change markers")
@@ -271,12 +380,14 @@ ColumnLayout {
 
         CheckBox {
             id: showTrendingMarker
+            visible: !fxType
             text: i18n("Show trending markers")
             enabled: exchangeEnabled.checked
         }
 
         PlasmaComponents.SpinBox {
             id: trendingTimeSpan
+            visible: !fxType
             enabled: showTrendingMarker.checked && exchangeEnabled.checked
             editable: true
             from: 1
