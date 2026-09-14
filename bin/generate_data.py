@@ -33,6 +33,14 @@ import sys
 import time
 from typing import Optional, Callable, Dict, List
 
+# Python 3.14 switched the POSIX default start method to "forkserver", which
+# re-imports this module in every pool worker. This script runs argparse and
+# the whole probe at module level (no __main__ guard), so workers would
+# recursively re-run it and the forkserver dies with ConnectionResetError.
+# Force the historical "fork" behaviour.
+if os.name == 'posix':
+    mp.set_start_method('fork', force=True)
+
 
 ######################################################################
 
