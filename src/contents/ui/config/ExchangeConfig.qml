@@ -31,11 +31,11 @@ ColumnLayout {
 
     // ------------------------------------------------------------------------------------------------------------------------
 
-    function init() {
+    function init(asFx) {
         fromJson({
             'enabled': true,
 
-            'type': 'crypto',
+            'type': asFx ? 'fx' : 'crypto',
             'exchange': Crypto.getExchageIds()[0],
             'crypto': Crypto.BTC,   // FIXME we should fetch first crypto supported by exchange!
             'fxBase': 'USD',
@@ -44,7 +44,7 @@ ColumnLayout {
             'fxHideSymbol': false,
             'hideCryptoLogo': false,
             'pair': Crypto.USD,   // FIXME we should fetch first pair supported by exchange!
-            'refreshRate': 15,
+            'refreshRate': asFx ? 60 : 15,
             'hidePriceDecimals': false,
             'useCustomLocale': false,
             'customLocaleName': '',
@@ -180,7 +180,15 @@ ColumnLayout {
             Kirigami.FormData.label: i18n('Entry type')
             textRole: 'text'
             model: [{'value': 'crypto', 'text': i18n('Crypto')}, {'value': 'fx', 'text': i18n('Fiat FX')}]
-            onActivated: fxType = (currentValue === 'fx')
+            onActivated: {
+                fxType = (currentValue === 'fx')
+                if (fxType) {
+                    // switching to FX mid-edit: point the currency combos at
+                    // the entry's current fx values instead of list defaults
+                    fxBaseComboBox.syncFrom(fxBase)
+                    fxQuoteComboBox.syncFrom(fxQuote)
+                }
+            }
 
             function syncFrom(t) {
                 currentIndex = (t === 'fx') ? 1 : 0

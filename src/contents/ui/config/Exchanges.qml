@@ -168,6 +168,13 @@ Item {
 
 			PlasmaComponents.Button {
 				Layout.preferredWidth: Kirigami.Units.gridUnit * 8
+				text: i18n("Add FX pair")
+				icon.name: "list-add"
+				onClicked: addExchange(true)
+			}
+
+			PlasmaComponents.Button {
+				Layout.preferredWidth: Kirigami.Units.gridUnit * 8
 				text: i18n("Edit")
 				icon.name: "edit-entry"
 				onClicked: editExchange(exchangesList.currentIndex)
@@ -238,8 +245,8 @@ Item {
 		serializedExchanges.text = JSON.stringify(exchanges)
 	}
 
-	function addExchange() {
-		exchange.init()
+	function addExchange(asFx) {
+		exchange.init(asFx)
 		selectedRow = -1
 		exchangeEditDialog.visible = true
 	}
