@@ -4,11 +4,11 @@
 // https://doc.qt.io/qt-6/qtqml-javascript-resources.html
 .pragma library
 
-const version="3.0.0"
+const version="3.0.1"
 const title="Crypto Tracker"
 const url="https://github.com/MarcinOrlowski/crypto-tracker-plasmoid"
 const authorName="Marcin Orlowski"
 const authorUrl="http://marcinorlowski.com/"
-const updateCheckerUrl="https://raw.githubusercontent.com/MarcinOrlowski/crypto-tracker-plasmoid/master/src/metadata.desktop"
+const updateCheckerUrl="https://raw.githubusercontent.com/mmeissner/crypto-tracker-plasmoid/master/src/metadata.json"
 const firstReleaseYear=2021
 
