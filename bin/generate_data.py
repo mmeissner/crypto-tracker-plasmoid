@@ -320,13 +320,10 @@ class Binance(Exchange):
             resp = json.loads(response.text)
         except ValueError:
             return False
-        if not isinstance(resp, List):
-            return False
-        for field in ['id', 'price', 'qty', 'quoteQty', 'time', ]:
-            if field not in resp:
-                return False
-
-        return True
+        # /api/v3/ticker/price replies with a single {"symbol": ..., "price": ...}
+        # object (matching getRateFromExchangeData's "return data.price"), not a
+        # list of trade records.
+        return isinstance(resp, Dict) and 'symbol' in resp and 'price' in resp
 
 class Bitstamp(Exchange):
     def do_api_call(self, queue, tr: TestResult) -> None:
