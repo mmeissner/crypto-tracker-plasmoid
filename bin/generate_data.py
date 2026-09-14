@@ -341,20 +341,6 @@ class Bitstamp(Exchange):
         self.d('#{sc} isValid:{rc} {url}'.format(url = url, sc = response.status_code, rc = tr.rc))
         queue.put(tr)
 
-class Bitbay(Exchange):
-    def is_ticker_valid(self, response: req.Response) -> bool:
-        if response.status_code != req.codes.ok:
-            return False
-
-        try:
-            resp = json.loads(response.text)
-        except ValueError:
-            return False
-        for field in ['min', 'max', 'last', 'bid', 'ask', ]:
-            if field not in resp:
-                return False
-        return True
-
 class Coinmate(Exchange):
     def is_ticker_valid(self, response: req.Response) -> bool:
         if response.status_code != req.codes.ok:
@@ -594,23 +580,6 @@ exchanges.add(
         functions = {
             'getRateFromExchangeData': 'return data.ask',
             'getUrl': 'return `https://www.bitstamp.net/api/v2/ticker/${crypto.toLowerCase()}${pair.toLowerCase()}`'
-        },
-    ))
-
-exchanges.add(
-    Bitbay(
-        # api.zonda.exchange (BitBay's exchange platform) no longer resolves —
-        # DNS is dead as of 2026-09. Disabled so the widget doesn't ship an
-        # exchange with zero pairs; flip back if the API ever returns.
-        disabled = True,
-        code = 'bitbay-net',
-        name = 'BitBay',
-        url = 'https://bitbay.net/',
-        api_url = 'https://api.zonda.exchange/rest/trading/ticker/{crypto}-{pair}',
-
-        functions = {
-            'getRateFromExchangeData': 'return data.ask',
-            'getUrl': 'return `https://api.zonda.exchange/rest/trading/ticker/${crypto}-${pair}`'
         },
     ))
 

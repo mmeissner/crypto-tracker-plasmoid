@@ -34,7 +34,6 @@ ALLOWED_TICKER_HOSTS = {
     'www.bitstamp.net',
     'api.kraken.com',
     'coinmate.io',
-    'api.zonda.exchange',
     # human-facing exchange websites carried in the 'url' field (shown in the
     # config dialog, opened only on explicit user click)
     'binance.com',
@@ -43,7 +42,8 @@ ALLOWED_TICKER_HOSTS = {
 }
 FORBIDDEN_TOKENS = ('eval(', 'XMLHttpRequest', 'atob(', 'document.', 'import(', 'fetch(')
 ENTRY_KEYS = {
-    'enabled', 'exchange', 'crypto', 'hideCryptoLogo', 'pair', 'refreshRate',
+    'enabled', 'type', 'exchange', 'crypto', 'fxBase', 'fxQuote', 'fxDecimals',
+    'fxHideSymbol', 'hideCryptoLogo', 'pair', 'refreshRate',
     'hidePriceDecimals', 'useCustomLocale', 'customLocaleName',
     'showPriceChangeMarker', 'showTrendingMarker', 'trendingTimeSpan',
     'flashOnPriceRaise', 'flashOnPriceRaiseColor', 'flashOnPriceDrop',
@@ -62,6 +62,12 @@ def check(cond, msg):
 def js_const(js, name):
     m = re.search(r'const {}="([^"]*)"'.format(re.escape(name)), js)
     return m.group(1) if m else None
+
+
+def strip_comments(js):
+    """Drop // and /* */ (and * continuation) comment lines so URL scans only
+    see string literals."""
+    return re.sub(r'^\s*(?://|/\*|\*).*$', '', js, flags=re.M)
 
 
 def main():
@@ -102,8 +108,7 @@ def main():
     check(data_file.exists(), "missing generated file: {}".format(data_file))
     data_js = data_file.read_text() if data_file.exists() else ''
 
-    urls = re.findall(r'https?://[^"\'`\s)]+',
-                      re.sub(r'^\s*//.*$', '', data_js, flags=re.M))
+    urls = re.findall(r'https?://[^"\'`\s)]+', strip_comments(data_js))
     for url in urls:
         host = urlparse(url).netloc
         check(host in ALLOWED_TICKER_HOSTS,
@@ -130,6 +135,19 @@ def main():
             for pair in exchange_pairs[code][crypto]:
                 check(re.fullmatch(r'[A-Z0-9]+', pair) is not None,
                       "odd pair code {!r} on {}".format(pair, code))
+
+    # --- fiat.js (FX source) --------------------------------------------------
+    fiat_file = SRC / 'contents' / 'js' / 'fiat.js'
+    check(fiat_file.exists(), "missing fiat.js: {}".format(fiat_file))
+    fiat_js = fiat_file.read_text() if fiat_file.exists() else ''
+    fiat_hosts = {'cdn.jsdelivr.net', 'latest.currency-api.pages.dev'}
+    for url in re.findall(r'https?://[^"\'`\s)]+', strip_comments(fiat_js)):
+        check(urlparse(url).netloc in fiat_hosts,
+              "unexpected host in fiat.js: {!r} ({})".format(urlparse(url).netloc, url))
+    for token in FORBIDDEN_TOKENS:
+        check(token not in fiat_js,
+              "forbidden token {!r} present in fiat.js".format(token))
+    fiat_codes = set(re.findall(r"'([A-Z]{3})':\s*\{", fiat_js))
 
     # --- icons ---------------------------------------------------------------
     img_dir = SRC / 'contents' / 'images'
@@ -162,6 +180,19 @@ def main():
               "default entry {} key set drift: missing={} extra={}".format(
                   i, ENTRY_KEYS - set(entry.keys()), set(entry.keys()) - ENTRY_KEYS))
         if not entry.get('enabled'):
+            continue
+        etype = entry.get('type', 'crypto')
+        check(etype in ('crypto', 'fx'),
+              "default entry {}: unknown type {!r}".format(i, etype))
+        if etype == 'fx':
+            fb, fq = entry.get('fxBase'), entry.get('fxQuote')
+            check(fb in fiat_codes, "default entry {}: unknown FX base {!r}".format(i, fb))
+            check(fq in fiat_codes, "default entry {}: unknown FX quote {!r}".format(i, fq))
+            check(fb != fq, "default entry {}: FX base equals quote".format(i))
+            check(isinstance(entry.get('fxDecimals'), int) and 0 <= entry['fxDecimals'] <= 12,
+                  "default entry {}: fxDecimals out of range".format(i))
+            check(isinstance(entry.get('fxHideSymbol'), bool),
+                  "default entry {}: fxHideSymbol must be bool".format(i))
             continue
         ex = entry.get('exchange')
         cr = entry.get('crypto')
